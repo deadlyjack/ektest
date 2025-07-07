@@ -1,6 +1,6 @@
 {
   "name": "ektest",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Light weight simple testing library",
   "keywords": [
     "Javascript",
