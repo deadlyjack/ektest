@@ -40,8 +40,8 @@ test('subtraction should work', () => {
   expect(5 - 3).toBe(2);
 });
 
-test('arrays should be equal', () => {
-  expect([1, 2, 3]).toEqual([1, 2, 3]);
+test('arrays should contain elements', () => {
+  expect([1, 2, 3]).toHave([1, 2]);
 });
 ```
 
@@ -60,41 +60,37 @@ ektest provides a comprehensive set of matchers for your assertions:
 ```javascript
 // Equality
 expect(value).toBe(4);
-expect(value).toEqual([1, 2, 3]);
 expect(value).not.toBe(5);
 
 // Truthiness
 expect(value).toBeTruthy();
 expect(value).toBeFalsy();
 expect(value).toBeNull();
-expect(value).toBeUndefined();
 expect(value).toBeDefined();
 
 // Numbers
 expect(value).toBeGreaterThan(3);
-expect(value).toBeGreaterThanOrEqual(4);
 expect(value).toBeLessThan(5);
-expect(value).toBeLessThanOrEqual(4);
-expect(value).toBeCloseTo(4.2, 1);
+expect(value).toBeNumber();
 
 // Strings
 expect(string).toMatch(/pattern/);
-expect(string).toContain('substring');
+expect(string).toBeString();
 
 // Arrays and Objects
-expect(array).toContain(item);
-expect(array).toHaveLength(3);
-expect(object).toHaveProperty('key');
-expect(object).toHaveProperty('key', 'value');
+expect(array).toHave(item);
+expect(array).toHave([item1, item2]); // Multiple items
+expect(array).toBeArray();
+expect(object).toHave('property');
+expect(object).toBeObject();
+expect(value).toBeEmpty();
 
-// Functions
-expect(fn).toThrow();
-expect(fn).toThrow('error message');
-expect(fn).toThrow(ErrorClass);
+// Type checking
+expect(value).toBeInstanceOf(Array);
+expect(value).toBeBoolean();
 
-// Promises
-await expect(promise).resolves.toBe(value);
-await expect(promise).rejects.toThrow();
+// Inclusion
+expect(value).toBeIn([1, 2, 3, 4]);
 ```
 
 ## CLI Options
@@ -163,28 +159,33 @@ test('calculator adds numbers correctly', () => {
 });
 ```
 
-### Async Tests
+### Array and Object Tests
 
 ```javascript
-// async.test.js
-test('async operation works', async () => {
-  const result = await fetchData();
-  expect(result).toBeDefined();
+// collections.test.js
+test('array contains elements', () => {
+  const numbers = [1, 2, 3, 4, 5];
+  expect(numbers).toHave(3);
+  expect(numbers).toHave([1, 2]);
 });
 
-test('promise resolves correctly', async () => {
-  await expect(fetchUser(1)).resolves.toHaveProperty('name');
+test('object has properties', () => {
+  const user = { name: 'John', age: 30 };
+  expect(user).toHave('name');
+  expect(user).toHave(['name', 'age']);
 });
 ```
 
-### Error Testing
+### Type Checking Tests
 
 ```javascript
-// errors.test.js
-test('function throws error', () => {
-  expect(() => {
-    throw new Error('Something went wrong');
-  }).toThrow('Something went wrong');
+// types.test.js
+test('type checking works', () => {
+  expect('hello').toBeString();
+  expect(42).toBeNumber();
+  expect(true).toBeBoolean();
+  expect([1, 2, 3]).toBeArray();
+  expect({}).toBeObject();
 });
 ```
 
@@ -204,7 +205,8 @@ your-project/
 
 ## Roadmap
 
-- 🌐 **Browser Testing** - Run tests in real browsers
+- � **More Matchers** - Add toEqual, toThrow, toContain, and promise matchers
+- �🌐 **Browser Testing** - Run tests in real browsers
 - 📊 **Code Coverage** - Built-in coverage reporting
 - 🔄 **More Bundlers** - Support for Vite, Rollup, esbuild
 - 🎯 **Test Runners** - Parallel test execution
