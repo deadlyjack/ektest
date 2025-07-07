@@ -1,0 +1,22 @@
+# Development files
+node_modules/
+package-lock.json
+.git/
+.gitignore
+*.log
+.DS_Store
+
+# Development configuration
+biome.json
+jsconfig.json
+webpack.config.js
+
+# Test files (if any)
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Documentation source
+docs/
+README.md.backup
