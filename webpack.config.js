@@ -11,12 +11,11 @@ try {
   } else {
     config = await import(resolve('webpack.config.js'));
   }
-  if (typeof config.default === 'object') {
+
+  if ('default' in config) {
     config = config.default;
   }
-  if (typeof config === 'function') {
-    config = config();
-  }
+
   if (!config) {
     throw new Error('Bundler configuration is not defined');
   }
@@ -24,17 +23,23 @@ try {
   console.error('Error loading user bundler config:', error);
 }
 
+export default (...args) => {
+  if (typeof config === 'function') {
+    config = config(...args);
+  }
 
-export default {
-  ...config,
-  entry: {
-    main: resolve(LIB_DIR, 'tests.js'),
-  },
-  output: {
-    path: BUILD_DIR,
-    filename: 'main.cjs',
-    assetModuleFilename: '[name][ext]',
-    publicPath: '/',
-    clean: true,
+  return {
+    ...config,
+    mode: config.mode || 'production',
+    entry: {
+      main: resolve(LIB_DIR, 'tests.js'),
+    },
+    output: {
+      path: BUILD_DIR,
+      filename: 'main.cjs',
+      assetModuleFilename: '[name][ext]',
+      publicPath: '/',
+      clean: true,
+    }
   }
 };

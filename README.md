@@ -33,15 +33,15 @@ npm install ektest
 ```javascript
 // math.test.js
 test('addition should work', () => {
-  expect(2 + 2).toBe(4);
+  expect('2 + 2', 2 + 2).toBe(4);
 });
 
 test('subtraction should work', () => {
-  expect(5 - 3).toBe(2);
+  expect('5 - 3', 5 - 3).toBe(2);
 });
 
 test('arrays should contain elements', () => {
-  expect([1, 2, 3]).toHave([1, 2]);
+  expect('[1, 2, 3]', [1, 2, 3]).toHave([1, 2]);
 });
 ```
 
@@ -57,40 +57,42 @@ That's it! 🎉
 
 ektest provides a comprehensive set of matchers for your assertions:
 
+**Note:** The `expect` function takes two parameters: `expect(name, value)` where `name` is a descriptive string and `value` is the actual value to test.
+
 ```javascript
 // Equality
-expect(value).toBe(4);
-expect(value).not.toBe(5);
+expect('value', value).toBe(4);
+expect('value', value).not.toBe(5);
 
 // Truthiness
-expect(value).toBeTruthy();
-expect(value).toBeFalsy();
-expect(value).toBeNull();
-expect(value).toBeDefined();
+expect('value', value).toBeTruthy();
+expect('value', value).toBeFalsy();
+expect('value', value).toBeNull();
+expect('value', value).toBeDefined();
 
 // Numbers
-expect(value).toBeGreaterThan(3);
-expect(value).toBeLessThan(5);
-expect(value).toBeNumber();
+expect('value', value).toBeGreaterThan(3);
+expect('value', value).toBeLessThan(5);
+expect('value', value).toBeNumber();
 
 // Strings
-expect(string).toMatch(/pattern/);
-expect(string).toBeString();
+expect('string', string).toMatch(/pattern/);
+expect('string', string).toBeString();
 
 // Arrays and Objects
-expect(array).toHave(item);
-expect(array).toHave([item1, item2]); // Multiple items
-expect(array).toBeArray();
-expect(object).toHave('property');
-expect(object).toBeObject();
-expect(value).toBeEmpty();
+expect('array', array).toHave(item);
+expect('array', array).toHave([item1, item2]); // Multiple items
+expect('array', array).toBeArray();
+expect('object', object).toHave('property');
+expect('object', object).toBeObject();
+expect('value', value).toBeEmpty();
 
 // Type checking
-expect(value).toBeInstanceOf(Array);
-expect(value).toBeBoolean();
+expect('value', value).toBeInstanceOf(Array);
+expect('value', value).toBeBoolean();
 
 // Inclusion
-expect(value).toBeIn([1, 2, 3, 4]);
+expect('value', value).toBeIn([1, 2, 3, 4]);
 ```
 
 ## CLI Options
@@ -155,7 +157,7 @@ ektest automatically finds test files with the pattern `*.test.js` in your proje
 // calculator.test.js
 test('calculator adds numbers correctly', () => {
   const result = 2 + 3;
-  expect(result).toBe(5);
+  expect('result', result).toBe(5);
 });
 ```
 
@@ -165,14 +167,14 @@ test('calculator adds numbers correctly', () => {
 // collections.test.js
 test('array contains elements', () => {
   const numbers = [1, 2, 3, 4, 5];
-  expect(numbers).toHave(3);
-  expect(numbers).toHave([1, 2]);
+  expect('numbers', numbers).toHave(3);
+  expect('numbers', numbers).toHave([1, 2]);
 });
 
 test('object has properties', () => {
   const user = { name: 'John', age: 30 };
-  expect(user).toHave('name');
-  expect(user).toHave(['name', 'age']);
+  expect('user', user).toHave('name');
+  expect('user', user).toHave(['name', 'age']);
 });
 ```
 
@@ -181,11 +183,36 @@ test('object has properties', () => {
 ```javascript
 // types.test.js
 test('type checking works', () => {
-  expect('hello').toBeString();
-  expect(42).toBeNumber();
-  expect(true).toBeBoolean();
-  expect([1, 2, 3]).toBeArray();
-  expect({}).toBeObject();
+  expect('hello', 'hello').toBeString();
+  expect('number', 42).toBeNumber();
+  expect('boolean', true).toBeBoolean();
+  expect('array', [1, 2, 3]).toBeArray();
+  expect('object', {}).toBeObject();
+});
+```
+
+### Async Tests
+
+```javascript
+// async.test.js
+test('async operation works', async () => {
+  const data = await fetchData();
+  expect('data', data).toBeDefined();
+  expect('data', data).toBeObject();
+});
+
+test('async calculation', async () => {
+  const result = await new Promise(resolve => {
+    setTimeout(() => resolve(10 + 5), 100);
+  });
+  expect('result', result).toBe(15);
+});
+
+test('async array processing', async () => {
+  const numbers = [1, 2, 3, 4, 5];
+  const doubled = await Promise.all(numbers.map(async n => n * 2));
+  expect('doubled', doubled).toHave([2, 4, 6, 8, 10]);
+  expect('doubled', doubled).toBeArray();
 });
 ```
 
@@ -205,8 +232,8 @@ your-project/
 
 ## Roadmap
 
-- � **More Matchers** - Add toEqual, toThrow, toContain, and promise matchers
-- �🌐 **Browser Testing** - Run tests in real browsers
+- 🎯 **More Matchers** - Add toEqual, toThrow, toContain, and promise matchers
+- 🌐 **Browser Testing** - Run tests in real browsers
 - 📊 **Code Coverage** - Built-in coverage reporting
 - 🔄 **More Bundlers** - Support for Vite, Rollup, esbuild
 - 🎯 **Test Runners** - Parallel test execution
