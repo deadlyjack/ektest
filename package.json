@@ -30,17 +30,18 @@
   },
   "scripts": {
     "test": "npm pack && node test.js",
-    "test:electron": "npm pack && node test-electron.js"
+    "test:electron": "npm pack && node test-electron.js",
+    "test:webapp": "npm pack && node test-webapp.js"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.6",
-    "puppeteer-core": "^24.27.0"
+    "puppeteer": "^24.27.0"
   },
   "peerDependencies": {
-    "puppeteer-core": ">=23.0.0"
+    "puppeteer": ">=23.0.0"
   },
   "peerDependenciesMeta": {
-    "puppeteer-core": {
+    "puppeteer": {
       "optional": true
     }
   }

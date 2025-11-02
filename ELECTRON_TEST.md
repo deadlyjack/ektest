@@ -42,5 +42,5 @@ The test creates:
 The test requires these packages (installed automatically):
 
 - `electron` - For the Electron runtime
-- `puppeteer-core` - For browser automation
+- `puppeteer` - For browser automation
 - `webpack` & `webpack-cli` - For bundling tests

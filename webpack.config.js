@@ -93,6 +93,12 @@ export default async (...args) => {
       publicPath: '/',
       clean: true,
     },
+    externals: {
+      // Mark optional puppeteer dependencies as external
+      'typescript': 'commonjs typescript',
+      'bufferutil': 'commonjs bufferutil',
+      'utf-8-validate': 'commonjs utf-8-validate',
+    },
     module: {
       ...userModule,
       rules: filteredRules,

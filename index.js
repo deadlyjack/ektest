@@ -66,13 +66,14 @@ if (detailed) {
   import summary from "${summaryLibPath}";
   import config from '${configLibPath}';
   import Loader from '${loaderLibPath}';
-  import query, { setupElectron, waitFor } from '${queryLibPath}';
+  import query, { setup, setupElectron, waitFor } from '${queryLibPath}';
 
   globalThis = (typeof globalThis === 'object' && globalThis) || (typeof self === 'object' && self) || (typeof window === 'object' && window) || {};
   globalThis.test = test;
   globalThis.expect = expect;
   globalThis.query = query;
-  globalThis.setupElectron = setupElectron;
+  globalThis.setup = setup;
+  globalThis.setupElectron = setupElectron; // Backward compatibility
   globalThis.waitFor = waitFor;
 
   config.verbose = ${verbose};

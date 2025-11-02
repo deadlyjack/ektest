@@ -218,19 +218,21 @@ test('async array processing', async () => {
 
 ## Electron Testing with Puppeteer
 
-ektest supports testing Electron applications using Puppeteer. This allows you to interact with your Electron app's UI and test user interactions.
+ektest supports testing Electron applications and web applications using Puppeteer. This allows you to interact with your app's UI and test user interactions.
 
 ### Installation
 
 First, install the required dependency:
 
 ```bash
-npm install --save-dev puppeteer-core
+npm install --save-dev puppeteer
 ```
 
 ### Setup
 
-Use the `setupElectron()` function to launch your Electron app and get a Puppeteer page instance. **Cleanup is handled automatically** after all tests complete - you don't need to call cleanup manually!
+Use the `setupElectron()` function to launch your Electron app or web app and get a Puppeteer page instance. **Cleanup is handled automatically** after all tests complete - you don't need to call cleanup manually!
+
+#### Testing Electron Apps
 
 **Auto-detection:** If you have the `electron` package installed, `setupElectron()` will automatically detect and use it. You only need to specify `appPath` if you're testing a different Electron executable.
 
@@ -254,6 +256,40 @@ test('Electron app launches', async () => {
   });
 
   // Your tests here - cleanup happens automatically!
+});
+```
+
+#### Testing Web Apps
+
+You can also test web applications by providing a `url` option. This launches a regular browser and navigates to the specified URL:
+
+```javascript
+test('web app login works', async () => {
+  const { page } = await setupElectron({
+    url: 'http://localhost:3000', // Your web app URL
+    puppeteerOptions: {
+      headless: false, // Set to true for headless mode
+    },
+  });
+
+  // Wait for login form to appear
+  await waitFor('#username');
+
+  // Interact with the login form
+  const username = await query('#username');
+  await username.type('testuser');
+
+  const password = await query('#password');
+  await password.type('password123');
+
+  const loginButton = await query('#login-button');
+  await loginButton.click();
+
+  // Verify login was successful
+  await waitFor('.dashboard', { timeout: 5000 });
+  const dashboard = await query('.dashboard');
+  const welcomeText = await dashboard.innerText;
+  expect('welcome message', welcomeText).toContain('Welcome');
 });
 ```
 

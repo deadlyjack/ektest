@@ -39,12 +39,13 @@ interface QueryElement {
   readonly puppeteer: any; // Puppeteer Page instance
 }
 
-interface SetupElectronOptions {
-  appPath?: string; // Optional - auto-detects if electron package is installed
+interface SetupOptions {
+  appPath?: string; // Optional - for Electron apps, auto-detects if electron package is installed
+  url?: string; // Optional - URL to navigate to for web app testing
   puppeteerOptions?: any;
 }
 
-interface ElectronSetup {
+interface Setup {
   browser: any;
   page: any;
 }
@@ -56,9 +57,7 @@ declare const expect: (
   verbose?: boolean,
 ) => IExpectation;
 declare const query: (selector: string) => Promise<QueryElement>;
-declare const setupElectron: (
-  options: SetupElectronOptions,
-) => Promise<ElectronSetup>;
+declare const setup: (options: SetupOptions) => Promise<Setup>;
 declare const waitFor: (
   selector: string,
   options?: { timeout?: number; visible?: boolean; hidden?: boolean },

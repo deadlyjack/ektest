@@ -1,6 +1,6 @@
 import os from 'node:os';
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import packageJson from './package.json' with { type: 'json' };
 
@@ -11,11 +11,7 @@ console.log('🧪 Testing Electron implementation for ektest...\n');
 // Cleanup if exists
 if (existsSync(TEST_DIR)) {
   console.log('🧹 Cleaning up existing test directory...');
-  if (os.platform() === 'win32') {
-    execSync(`rmdir /s /q "${TEST_DIR}"`, { stdio: 'inherit' });
-  } else {
-    execSync(`rm -rf "${TEST_DIR}"`, { stdio: 'inherit' });
-  }
+  rmSync(TEST_DIR, { recursive: true, force: true });
 }
 
 console.log('📁 Creating test directory...');
@@ -462,13 +458,14 @@ try {
   execSync('npm install electron --save-dev', { cwd: TEST_DIR, stdio: 'inherit' });
 
   console.log('\n📥 Installing Puppeteer...');
-  execSync('npm install puppeteer-core --save-dev', { cwd: TEST_DIR, stdio: 'inherit' });
+  execSync('npm install puppeteer --save-dev', { cwd: TEST_DIR, stdio: 'inherit' });
 
   console.log('\n📥 Installing webpack...');
   execSync('npm install webpack webpack-cli --save-dev', { cwd: TEST_DIR, stdio: 'inherit' });
 
   console.log('\n📥 Installing ektest...');
-  execSync(`npm install --legacy-peer-deps --save-dev "${process.cwd()}\\ektest-${packageJson.version}.tgz"`, { cwd: TEST_DIR, stdio: 'inherit' });
+  const tgzFile = resolve(process.cwd(), `ektest-${packageJson.version}.tgz`);
+  execSync(`npm install --legacy-peer-deps --save-dev "${tgzFile}"`, { cwd: TEST_DIR, stdio: 'inherit' });
 
   // Run tests
   console.log('\n🧪 Running Electron tests...\n');
@@ -480,13 +477,21 @@ try {
   console.error('\n❌ Test failed:', error.message);
   process.exit(1);
 } finally {
-  // Cleanup
+  // Cleanup with retry
   console.log('\n🧹 Cleaning up test directory...');
   if (existsSync(TEST_DIR)) {
-    if (os.platform() === 'win32') {
-      execSync(`rmdir /s /q "${TEST_DIR}"`, { stdio: 'ignore' });
-    } else {
-      execSync(`rm -rf "${TEST_DIR}"`, { stdio: 'ignore' });
+    // Try multiple times as files may still be in use
+    for (let i = 0; i < 3; i++) {
+      try {
+        rmSync(TEST_DIR, { recursive: true, force: true, maxRetries: 3, retryDelay: 1000 });
+        break;
+      } catch (e) {
+        if (i === 2) {
+          console.warn('⚠️  Could not cleanup directory, it may need manual removal');
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
     }
   }
   console.log('✨ Cleanup complete!\n');
