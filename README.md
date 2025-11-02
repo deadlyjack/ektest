@@ -202,7 +202,7 @@ test('async operation works', async () => {
 });
 
 test('async calculation', async () => {
-  const result = await new Promise(resolve => {
+  const result = await new Promise((resolve) => {
     setTimeout(() => resolve(10 + 5), 100);
   });
   expect('result', result).toBe(15);
@@ -210,11 +210,220 @@ test('async calculation', async () => {
 
 test('async array processing', async () => {
   const numbers = [1, 2, 3, 4, 5];
-  const doubled = await Promise.all(numbers.map(async n => n * 2));
+  const doubled = await Promise.all(numbers.map(async (n) => n * 2));
   expect('doubled', doubled).toHave([2, 4, 6, 8, 10]);
   expect('doubled', doubled).toBeArray();
 });
 ```
+
+## Electron Testing with Puppeteer
+
+ektest supports testing Electron applications using Puppeteer. This allows you to interact with your Electron app's UI and test user interactions.
+
+### Installation
+
+First, install the required dependency:
+
+```bash
+npm install --save-dev puppeteer-core
+```
+
+### Setup
+
+Use the `setupElectron()` function to launch your Electron app and get a Puppeteer page instance. **Cleanup is handled automatically** after all tests complete - you don't need to call cleanup manually!
+
+**Auto-detection:** If you have the `electron` package installed, `setupElectron()` will automatically detect and use it. You only need to specify `appPath` if you're testing a different Electron executable.
+
+```javascript
+test('Electron app launches', async () => {
+  // Option 1: Auto-detect Electron (if electron package is installed)
+  const { page } = await setupElectron({
+    puppeteerOptions: {
+      headless: false,
+      args: ['path/to/your/main.js'], // Your app's main file
+    },
+  });
+
+  // Option 2: Specify custom Electron executable
+  const { page } = await setupElectron({
+    appPath: 'path/to/electron.exe', // Custom Electron path
+    puppeteerOptions: {
+      headless: false,
+      args: ['path/to/your/main.js'],
+    },
+  });
+
+  // Your tests here - cleanup happens automatically!
+});
+```
+
+### Query API
+
+The `query(selector)` function allows you to find and interact with DOM elements in your Electron app.
+
+The `waitFor(selector, options?)` function waits for an element to appear in the page before continuing.
+
+```javascript
+test('can interact with UI elements', async () => {
+  await setupElectron({
+    appPath: 'path/to/your/electron/app',
+  });
+
+  // Wait for an element to appear
+  await waitFor('#submit-button', { timeout: 5000 });
+
+  // Query an element
+  const button = await query('#submit-button');
+
+  // Get inner text
+  const text = await button.innerText;
+  expect('button text', text).toBe('Submit');
+
+  // Get inner HTML
+  const html = await button.innerHTML;
+  expect('button html', html).toBeString();
+
+  // Type into an input field
+  const input = await query('#username');
+  await input.type('myusername'); // Types with random human-like delays
+
+  // Type with custom delay
+  const email = await query('#email');
+  await email.type('user@example.com', { delay: 50 }); // 50ms between each key
+
+  // Click the button
+  await button.click();
+
+  // Wait for a success message to appear
+  await waitFor('#success-message', { timeout: 5000, visible: true });
+
+  // Right-click for context menu
+  await button.contextMenu();
+});
+```
+
+### waitFor Function
+
+The `waitFor(selector, options?)` function waits for an element to appear in the page:
+
+```javascript
+// Wait for element to exist (default timeout: 30000ms)
+await waitFor('#my-element');
+
+// Wait with custom timeout
+await waitFor('#my-element', { timeout: 5000 });
+
+// Wait for element to be visible
+await waitFor('#my-element', { visible: true });
+
+// Wait for element to be hidden
+await waitFor('#my-element', { hidden: true });
+```
+
+**Options:**
+
+- `timeout` (number, optional): Maximum time to wait in milliseconds (default: 30000)
+- `visible` (boolean, optional): Wait for element to be visible (default: false)
+- `hidden` (boolean, optional): Wait for element to be hidden (default: false)
+
+### Query Element Methods
+
+The object returned by `query()` provides the following methods and properties:
+
+- **`innerText`** (Promise<string>): Get the inner text content of the element
+- **`innerHTML`** (Promise<string>): Get the inner HTML of the element
+- **`click()`** (Promise<void>): Click the element
+- **`contextMenu()`** (Promise<void>): Right-click the element to open context menu
+- **`type(text, options?)`** (Promise<void>): Type text into the element with human-like delays
+  - `text` (string): The text to type
+  - `options.delay` (number, optional): Delay between keystrokes in milliseconds. If not specified, uses random delays between 50-150ms to mimic human typing
+- **`element`** (ElementHandle): Access the raw Puppeteer element for advanced operations
+- **`puppeteer`** (Page): Access the Puppeteer page instance for complex testing scenarios
+
+### Complete Example
+
+```javascript
+// electron-app.test.js
+test('Electron app full workflow', async () => {
+  const { page } = await setupElectron({
+    appPath: './dist/electron/MyApp.exe',
+    puppeteerOptions: {
+      headless: false,
+    },
+  });
+
+  // Verify app title
+  const title = await query('#app-title');
+  const titleText = await title.innerText;
+  expect('app title', titleText).toBe('My Awesome App');
+
+  // Fill in a form with human-like typing
+  const nameInput = await query('input[name="username"]');
+  await nameInput.click();
+  await nameInput.type('testuser'); // Types with random delays (50-150ms)
+
+  const emailInput = await query('input[name="email"]');
+  await emailInput.click();
+  await emailInput.type('test@example.com', { delay: 30 }); // Types with 30ms delay
+
+  // Submit the form
+  const submitButton = await query('button[type="submit"]');
+  await submitButton.click();
+
+  // Wait for result
+  await page.waitForSelector('#success-message');
+
+  // Verify success message
+  const successMsg = await query('#success-message');
+  const msgText = await successMsg.innerText;
+  expect('success message', msgText).toMatch(/success/i);
+});
+```
+
+### Advanced Testing with Puppeteer
+
+For complex testing scenarios, you can access the Puppeteer page instance directly:
+
+```javascript
+test('Advanced Puppeteer operations', async () => {
+  const { page } = await setupElectron({
+    appPath: './dist/electron/MyApp.exe',
+  });
+
+  // Query an element
+  const button = await query('#my-button');
+
+  // Access Puppeteer page for advanced operations
+  const puppeteerPage = button.puppeteer;
+
+  // Take a screenshot
+  await puppeteerPage.screenshot({ path: 'screenshot.png' });
+
+  // Evaluate JavaScript in the page context
+  const result = await puppeteerPage.evaluate(() => {
+    return window.someGlobalVariable;
+  });
+
+  // Wait for navigation
+  await Promise.all([puppeteerPage.waitForNavigation(), button.click()]);
+
+  // Emulate network conditions
+  const client = await puppeteerPage.target().createCDPSession();
+  await client.send('Network.emulateNetworkConditions', {
+    offline: false,
+    downloadThroughput: (200 * 1024) / 8,
+    uploadThroughput: (200 * 1024) / 8,
+    latency: 20,
+  });
+});
+```
+
+### Best Practices
+
+1. **Automatic cleanup**: Cleanup is handled automatically after tests complete - no need for manual cleanup calls!
+2. **Wait for elements**: Use `page.waitForSelector()` when waiting for dynamic content
+3. **Access raw Puppeteer**: Use `.element` property to access the raw Puppeteer ElementHandle for advanced operations
+4. **Use puppeteer getter**: Access `.puppeteer` to get the full Puppeteer page instance for complex scenarios like screenshots, network emulation, or CDP sessions
 
 ## Project Structure
 
@@ -253,12 +462,12 @@ module.exports = {
   extensionsToTreatAsEsm: ['.ts'],
   globals: {
     'ts-jest': {
-      useESM: true
-    }
+      useESM: true,
+    },
   },
   moduleNameMapping: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
-  }
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
 };
 ```
 

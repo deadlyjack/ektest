@@ -3,6 +3,7 @@
 import { exec, spawn } from 'node:child_process';
 import { readdir, stat, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import Loader from './lib/loader.js';
 import config from './lib/config.js';
 import { BUILD_DIR, LIB_DIR, testDir } from './config.js';
@@ -52,16 +53,27 @@ if (detailed) {
     process.exit(1);
   }
 
+  const testLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/test.js')).href;
+  const expectLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/expect.js')).href;
+  const summaryLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/summary.js')).href;
+  const configLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/config.js')).href;
+  const loaderLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/loader.js')).href;
+  const queryLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/query.js')).href;
+
   let tests = `
-  import test from "${process.cwd()}/node_modules/ektest/lib/test.js";
-  import expect from "${process.cwd()}/node_modules/ektest/lib/expect.js";
-  import summary from "${process.cwd()}/node_modules/ektest/lib/summary.js";
-  import config from '${process.cwd()}/node_modules/ektest/lib/config.js';
-  import Loader from '${process.cwd()}/node_modules/ektest/lib/loader.js';
+  import test from "${testLibPath}";
+  import expect from "${expectLibPath}";
+  import summary from "${summaryLibPath}";
+  import config from '${configLibPath}';
+  import Loader from '${loaderLibPath}';
+  import query, { setupElectron, waitFor } from '${queryLibPath}';
 
   globalThis = (typeof globalThis === 'object' && globalThis) || (typeof self === 'object' && self) || (typeof window === 'object' && window) || {};
   globalThis.test = test;
   globalThis.expect = expect;
+  globalThis.query = query;
+  globalThis.setupElectron = setupElectron;
+  globalThis.waitFor = waitFor;
 
   config.verbose = ${verbose};
 
@@ -72,10 +84,13 @@ if (detailed) {
     try {`;
 
   for (const file of testFiles) {
-    const relativePath = file.replace(`${process.cwd()}/`, '');
+    const cwd = process.cwd().replace(/\\/g, '/');
+    const normalizedFile = file.replace(/\\/g, '/');
+    const relativePath = normalizedFile.replace(`${cwd}/`, '');
+    const fileURL = pathToFileURL(file).href;
     tests += `
     config.file = '${relativePath}';
-    await import('${file}');
+    await import('${fileURL}');
 `;
   }
 
@@ -98,8 +113,12 @@ if (detailed) {
 
   await writeFile(resolve(LIB_DIR, 'tests.js'), tests, 'utf8');
   await new Promise((resolve, reject) => {
-    exec(`npx webpack --config ${webpackConfig}`, (error, stdout, stderr) => {
+    // Use proper quoting for cross-platform compatibility
+    exec(`npx webpack --config "${webpackConfig}"`, (error, stdout, stderr) => {
       if (error) {
+        console.error('Webpack compilation failed:');
+        if (stderr) console.error(stderr);
+        if (stdout) console.log(stdout);
         reject(error);
         return;
       }

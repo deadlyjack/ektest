@@ -1,12 +1,15 @@
 {
   "name": "ektest",
-  "version": "0.0.2",
-  "description": "Light weight simple testing library",
+  "version": "0.1.0",
+  "description": "Light weight simple testing library with Electron and Puppeteer support",
   "keywords": [
     "Javascript",
     "Test",
     "Jest",
-    "Mocha"
+    "Mocha",
+    "Electron",
+    "Puppeteer",
+    "E2E Testing"
   ],
   "license": "MIT",
   "author": "Ajit Kumar",
@@ -26,9 +29,19 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "node test.js"
+    "test": "npm pack && node test.js",
+    "test:electron": "npm pack && node test-electron.js"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.6"
+    "@biomejs/biome": "^2.0.6",
+    "puppeteer-core": "^24.27.0"
+  },
+  "peerDependencies": {
+    "puppeteer-core": ">=23.0.0"
+  },
+  "peerDependenciesMeta": {
+    "puppeteer-core": {
+      "optional": true
+    }
   }
 }

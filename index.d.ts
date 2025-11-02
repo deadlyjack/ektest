@@ -22,8 +22,44 @@ interface IExpectation {
 // add state property to the test function
 interface TestFunction {
   state: Record<string, any>;
-  (title: string, fn: (expect: (name: string, value: any) => IExpectation) => Promise<void>): void;
+  (
+    title: string,
+    fn: (expect: (name: string, value: any) => IExpectation) => Promise<void>,
+  ): void;
+}
+
+// Electron/Puppeteer testing support
+interface QueryElement {
+  readonly innerText: Promise<string>;
+  readonly innerHTML: Promise<string>;
+  click(): Promise<void>;
+  contextMenu(): Promise<void>;
+  type(text: string, options?: { delay?: number }): Promise<void>;
+  readonly element: any; // Puppeteer ElementHandle
+  readonly puppeteer: any; // Puppeteer Page instance
+}
+
+interface SetupElectronOptions {
+  appPath?: string; // Optional - auto-detects if electron package is installed
+  puppeteerOptions?: any;
+}
+
+interface ElectronSetup {
+  browser: any;
+  page: any;
 }
 
 declare const test: TestFunction;
-declare const expect: (name: string, value: any, verbose?: boolean) => IExpectation;
+declare const expect: (
+  name: string,
+  value: any,
+  verbose?: boolean,
+) => IExpectation;
+declare const query: (selector: string) => Promise<QueryElement>;
+declare const setupElectron: (
+  options: SetupElectronOptions,
+) => Promise<ElectronSetup>;
+declare const waitFor: (
+  selector: string,
+  options?: { timeout?: number; visible?: boolean; hidden?: boolean },
+) => Promise<any>;
