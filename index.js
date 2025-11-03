@@ -66,7 +66,7 @@ if (detailed) {
   import summary from "${summaryLibPath}";
   import config from '${configLibPath}';
   import Loader from '${loaderLibPath}';
-  import { query, setup, waitFor, keyPress } from '${webAppPath}';
+  import { query, setup, waitFor, keyPress, click, queryAll } from '${webAppPath}';
 
   globalThis = (typeof globalThis === 'object' && globalThis) || (typeof self === 'object' && self) || (typeof window === 'object' && window) || {};
   globalThis.test = test;
@@ -75,6 +75,8 @@ if (detailed) {
   globalThis.setup = setup;
   globalThis.waitFor = waitFor;
   globalThis.keyPress = keyPress;
+  globalThis.click = click;
+  globalThis.queryAll = queryAll;
 
   config.verbose = ${verbose};
 
