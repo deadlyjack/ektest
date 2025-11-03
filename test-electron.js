@@ -264,7 +264,7 @@ test('Electron app launches and has correct title', async () => {
   const electronPath = getElectronPath();
   const appPath = resolve(__dirname, '..', 'main.js');
 
-  const { page } = await setupElectron({
+  const { page } = await setup({
     appPath: electronPath,
     puppeteerOptions: {
       args: [appPath],
@@ -293,7 +293,7 @@ test('Can interact with buttons and get text', async () => {
   const electronPath = getElectronPath();
   const appPath = resolve(__dirname, '..', 'main.js');
 
-  const { page } = await setupElectron({
+  const { page } = await setup({
     appPath: electronPath,
     puppeteerOptions: {
       args: [appPath],
@@ -326,7 +326,7 @@ test('Can interact with input fields', async () => {
   const electronPath = getElectronPath();
   const appPath = resolve(__dirname, '..', 'main.js');
 
-  const { page } = await setupElectron({
+  const { page } = await setup({
     appPath: electronPath,
     puppeteerOptions: {
       args: [appPath],
@@ -359,7 +359,7 @@ test('Can trigger context menu', async () => {
   const electronPath = getElectronPath();
   const appPath = resolve(__dirname, '..', 'main.js');
 
-  const { page } = await setupElectron({
+  const { page } = await setup({
     appPath: electronPath,
     puppeteerOptions: {
       args: [appPath],
@@ -387,7 +387,7 @@ test('Can access puppeteer instance for advanced operations', async () => {
   const electronPath = getElectronPath();
   const appPath = resolve(__dirname, '..', 'main.js');
 
-  const { page } = await setupElectron({
+  const { page } = await setup({
     appPath: electronPath,
     puppeteerOptions: {
       args: [appPath],
@@ -414,7 +414,7 @@ test('Can access puppeteer instance for advanced operations', async () => {
     });
     expect('button count', buttonCount).toBe(3);
     
-    // Verify puppeteer page is the same as the one from setupElectron
+    // Verify puppeteer page is the same as the one from setup
     expect('puppeteer instance', puppeteerPage === page).toBeTruthy();
 });
 `);

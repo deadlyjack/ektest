@@ -334,7 +334,7 @@ console.log('✅ Creating webapp.test.js...');
 mkdirSync(resolve(TEST_DIR, 'tests'), { recursive: true });
 writeFileSync(resolve(TEST_DIR, 'tests', 'webapp.test.js'), `
 test('web app loads with correct title', async () => {
-  const { page } = await setupElectron({
+  const { page } = await setup({
     url: 'http://localhost:${PORT}',
     puppeteerOptions: {
       headless: false,
@@ -350,7 +350,7 @@ test('web app loads with correct title', async () => {
 });
 
 test('can fill out and submit form', async () => {
-  await setupElectron({
+  await setup({
     url: 'http://localhost:${PORT}',
     puppeteerOptions: {
       headless: false,
@@ -386,7 +386,7 @@ test('can fill out and submit form', async () => {
 });
 
 test('can clear form', async () => {
-  await setupElectron({
+  await setup({
     url: 'http://localhost:${PORT}',
     puppeteerOptions: {
       headless: false,
@@ -411,7 +411,7 @@ test('can clear form', async () => {
 });
 
 test('can fetch data from API', async () => {
-  await setupElectron({
+  await setup({
     url: 'http://localhost:${PORT}',
     puppeteerOptions: {
       headless: false,
@@ -434,7 +434,7 @@ test('can fetch data from API', async () => {
 });
 
 test('can navigate to about page', async () => {
-  await setupElectron({
+  await setup({
     url: 'http://localhost:${PORT}',
     puppeteerOptions: {
       headless: false,
@@ -460,7 +460,7 @@ test('can navigate to about page', async () => {
 });
 
 test('can navigate back to home', async () => {
-  await setupElectron({
+  await setup({
     url: 'http://localhost:${PORT}/about',
     puppeteerOptions: {
       headless: false,
@@ -479,6 +479,85 @@ test('can navigate back to home', async () => {
   const title = await query('#app-title');
   const titleText = await title.innerText;
   expect('home page title', titleText).toBe('Test Web Application');
+});
+
+test('keyPress function works with various key combinations', async () => {
+  const { page } = await setup({
+    url: 'http://localhost:${PORT}',
+    puppeteerOptions: {
+      headless: false,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    },
+  });
+
+  // Ensure we're on the home page
+  await page.goto('http://localhost:${PORT}', { waitUntil: 'networkidle2' });
+  await waitFor('#username', { timeout: 5000, visible: true });
+
+  // Focus on username input
+  const usernameInput = await query('#username');
+  await usernameInput.click();
+
+  // Test 1: Test Enter key
+  await page.evaluate(() => {
+    window.enterPressed = false;
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') window.enterPressed = true;
+    }, true);
+  });
+  
+  await keyPress('Enter', page);
+  await new Promise(resolve => setTimeout(resolve, 100));
+  let enterPressed = await page.evaluate(() => window.enterPressed);
+  expect('Enter key detected', enterPressed).toBeTruthy();
+
+  // Test 2: Test Escape key
+  await page.evaluate(() => {
+    window.escapePressed = false;
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') window.escapePressed = true;
+    });
+  });
+  await keyPress('Escape', page);
+  let escapePressed = await page.evaluate(() => window.escapePressed);
+  expect('Escape key detected', escapePressed).toBeTruthy();
+
+  // Test 3: Test Ctrl+Shift+K (multiple modifiers)
+  await page.evaluate(() => {
+    window.ctrlShiftKPressed = false;
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === 'K' || e.key === 'k')) {
+        window.ctrlShiftKPressed = true;
+      }
+    });
+  });
+  await keyPress('Ctrl+Shift+K', page);
+  let ctrlShiftKPressed = await page.evaluate(() => window.ctrlShiftKPressed);
+  expect('Ctrl+Shift+K detected', ctrlShiftKPressed).toBeTruthy();
+
+  // Test 4: Test Tab key navigation
+  await page.evaluate(() => document.getElementById('username').focus());
+  await keyPress('Tab', page);
+  await new Promise(resolve => setTimeout(resolve, 100));
+  let focusedElement = await page.evaluate(() => document.activeElement?.id);
+  expect('Tab navigation to email field', focusedElement).toBe('email');
+
+  // Test 5: Test Shift+Tab (reverse tab)
+  await keyPress('Shift+Tab', page);
+  await new Promise(resolve => setTimeout(resolve, 100));
+  let focusedAfterShiftTab = await page.evaluate(() => document.activeElement?.id);
+  expect('Shift+Tab navigation back to username', focusedAfterShiftTab).toBe('username');
+
+  // Test 6: Test dash separator support (Shift-Tab)
+  await page.evaluate(() => document.getElementById('username').focus());
+  await keyPress('Tab', page);
+  await new Promise(resolve => setTimeout(resolve, 100));
+  await keyPress('Shift-Tab', page); // Using dash instead of plus
+  await new Promise(resolve => setTimeout(resolve, 100));
+  let focusedAfterDashSeparator = await page.evaluate(() => document.activeElement?.id);
+  expect('Shift-Tab (dash separator) works', focusedAfterDashSeparator).toBe('username');
+
+  console.log('✅ All keyPress tests passed!');
 });
 `, { recursive: true });
 

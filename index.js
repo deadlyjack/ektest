@@ -58,7 +58,7 @@ if (detailed) {
   const summaryLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/summary.js')).href;
   const configLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/config.js')).href;
   const loaderLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/loader.js')).href;
-  const queryLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/query.js')).href;
+  const webAppPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/web-app.js')).href;
 
   let tests = `
   import test from "${testLibPath}";
@@ -66,15 +66,15 @@ if (detailed) {
   import summary from "${summaryLibPath}";
   import config from '${configLibPath}';
   import Loader from '${loaderLibPath}';
-  import query, { setup, setupElectron, waitFor } from '${queryLibPath}';
+  import { query, setup, waitFor, keyPress } from '${webAppPath}';
 
   globalThis = (typeof globalThis === 'object' && globalThis) || (typeof self === 'object' && self) || (typeof window === 'object' && window) || {};
   globalThis.test = test;
   globalThis.expect = expect;
   globalThis.query = query;
   globalThis.setup = setup;
-  globalThis.setupElectron = setupElectron; // Backward compatibility
   globalThis.waitFor = waitFor;
+  globalThis.keyPress = keyPress;
 
   config.verbose = ${verbose};
 

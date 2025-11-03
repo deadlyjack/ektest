@@ -62,3 +62,4 @@ declare const waitFor: (
   selector: string,
   options?: { timeout?: number; visible?: boolean; hidden?: boolean },
 ) => Promise<any>;
+declare const keyPress: (keys: string, page?: any) => Promise<void>;
