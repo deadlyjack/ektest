@@ -218,7 +218,7 @@ writeFileSync(resolve(TEST_DIR, 'index.html'), `
       <h2>User Form</h2>
       <input type="text" id="username" placeholder="Enter your name" />
       <input type="email" id="email" placeholder="Enter your email" />
-      <button id="submit-btn">Submit</button>
+      <button id="submit-btn" class="btn btn-primary">Submit</button>
       <button id="clear-btn">Clear</button>
     </div>
     
@@ -344,15 +344,20 @@ writeFileSync(resolve(TEST_DIR, 'about.html'), `
 console.log('✅ Creating webapp.test.js...');
 mkdirSync(resolve(TEST_DIR, 'tests'), { recursive: true });
 writeFileSync(resolve(TEST_DIR, 'tests', 'webapp.test.js'), `
-test('web app loads with correct title', async () => {
-  const { page } = await setup({
+let page;
+
+test('setup works and page is accessible', async () => {
+  const res = await setup({
     url: 'http://localhost:${PORT}',
     puppeteerOptions: {
       headless: false,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
   });
+  page = res.page;
+});
 
+test('web app loads with correct title', async () => {
   await waitFor('#app-title', { timeout: 5000 });
 
   const title = await query('#app-title');
@@ -361,14 +366,6 @@ test('web app loads with correct title', async () => {
 });
 
 test('can fill out and submit form', async () => {
-  await setup({
-    url: 'http://localhost:${PORT}',
-    puppeteerOptions: {
-      headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-  });
-
   await waitFor('#username', { timeout: 5000 });
 
   // Fill out form
@@ -397,14 +394,6 @@ test('can fill out and submit form', async () => {
 });
 
 test('can clear form', async () => {
-  await setup({
-    url: 'http://localhost:${PORT}',
-    puppeteerOptions: {
-      headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-  });
-
   await waitFor('#username', { timeout: 5000 });
 
   // Fill form
@@ -422,14 +411,6 @@ test('can clear form', async () => {
 });
 
 test('can fetch data from API', async () => {
-  await setup({
-    url: 'http://localhost:${PORT}',
-    puppeteerOptions: {
-      headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-  });
-
   await waitFor('#fetch-btn', { timeout: 5000 });
 
   const fetchBtn = await query('#fetch-btn');
@@ -445,14 +426,6 @@ test('can fetch data from API', async () => {
 });
 
 test('can navigate to about page', async () => {
-  await setup({
-    url: 'http://localhost:${PORT}',
-    puppeteerOptions: {
-      headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-  });
-
   await waitFor('#about-link', { timeout: 5000 });
 
   const aboutLink = await query('#about-link');
@@ -471,14 +444,6 @@ test('can navigate to about page', async () => {
 });
 
 test('can navigate back to home', async () => {
-  await setup({
-    url: 'http://localhost:${PORT}/about',
-    puppeteerOptions: {
-      headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-  });
-
   await waitFor('#home-link', { timeout: 5000 });
 
   const homeLink = await query('#home-link');
@@ -493,14 +458,6 @@ test('can navigate back to home', async () => {
 });
 
 test('keyPress function works with various key combinations', async () => {
-  const { page } = await setup({
-    url: 'http://localhost:${PORT}',
-    puppeteerOptions: {
-      headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-  });
-
   // Ensure we're on the home page
   await page.goto('http://localhost:${PORT}', { waitUntil: 'networkidle2' });
   await waitFor('#username', { timeout: 5000, visible: true });
@@ -572,14 +529,6 @@ test('keyPress function works with various key combinations', async () => {
 });
 
 test('queryAll can select multiple elements', async () => {
-  const { page } = await setup({
-    url: 'http://localhost:${PORT}',
-    puppeteerOptions: {
-      headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-  });
-
   await page.goto('http://localhost:${PORT}', { waitUntil: 'networkidle2' });
   await waitFor('.list-item', { timeout: 5000, visible: true });
 
@@ -606,14 +555,6 @@ test('queryAll can select multiple elements', async () => {
 });
 
 test('type() convenience method works', async () => {
-  const { page } = await setup({
-    url: 'http://localhost:${PORT}',
-    puppeteerOptions: {
-      headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-  });
-
   // Reload page for fresh start
   await page.goto('http://localhost:${PORT}', { waitUntil: 'networkidle2' });
   await waitFor('#username', { timeout: 5000, visible: true });
@@ -637,14 +578,6 @@ test('type() convenience method works', async () => {
 });
 
 test('click() convenience method works', async () => {
-  const { page } = await setup({
-    url: 'http://localhost:${PORT}',
-    puppeteerOptions: {
-      headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-  });
-
   // Reload page for fresh start
   await page.goto('http://localhost:${PORT}', { waitUntil: 'networkidle2' });
   await waitFor('#username', { timeout: 5000, visible: true });
@@ -668,6 +601,40 @@ test('click() convenience method works', async () => {
   expect('greeting appears after click', greetingText).toBe('Hello, charlie!');
   
   console.log('✅ click() convenience method tests passed!');
+});
+
+test('getAttribute, id, className, and classList work', async () => {
+  // Reload page for fresh start
+  await page.goto('http://localhost:${PORT}', { waitUntil: 'networkidle2' });
+  await waitFor('#username', { timeout: 5000, visible: true });
+
+  // Test id getter
+  const usernameInput = await query('#username');
+  const inputId = await usernameInput.id;
+  expect('id getter works', inputId).toBe('username');
+
+  // Test className getter
+  const submitButton = await query('#submit-btn');
+  const buttonClass = await submitButton.className;
+  expect('className contains btn', buttonClass).toContain('btn');
+
+  // Test classList getter (returns array)
+  const buttonClassList = await submitButton.classList;
+  expect('classList is array', buttonClassList).toBeArray();
+  expect('classList contains btn', buttonClassList).toContain('btn');
+
+  // Test getAttribute
+  const inputType = await usernameInput.getAttribute('type');
+  expect('getAttribute returns type', inputType).toBe('text');
+  
+  const inputPlaceholder = await usernameInput.getAttribute('placeholder');
+  expect('getAttribute returns placeholder', inputPlaceholder).toBe('Enter your name');
+
+  // Test getAttribute with non-existent attribute
+  const nonExistent = await usernameInput.getAttribute('data-nonexistent');
+  expect('getAttribute returns null for non-existent', nonExistent).toBeNull();
+
+  console.log('✅ getAttribute, id, className, and classList tests passed!');
 });
 `, { recursive: true });
 

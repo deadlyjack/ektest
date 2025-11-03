@@ -256,6 +256,42 @@ test('async array processing', async () => {
 });
 ```
 
+### Aborting Tests
+
+You can abort test execution at any point using the `abort()` function. This is useful when a critical condition is met and continuing tests would be meaningless:
+
+```javascript
+// abort.test.js
+test('First test - this runs', async () => {
+  expect('simple check', true).toBe(true);
+  console.log('✓ First test passed');
+});
+
+test('Second test - abort here', async () => {
+  const criticalCondition = await checkSystemState();
+
+  if (!criticalCondition) {
+    abort('Critical system error - cannot continue testing');
+    return; // Exit this test
+  }
+
+  // This won't run if aborted
+  expect('this check', true).toBe(true);
+});
+
+test('Third test - this will NOT run', async () => {
+  // This test is skipped because abort() was called
+  expect('never runs', 1).toBe(1);
+});
+```
+
+**Key points:**
+
+- `abort(message)` stops all remaining tests from running
+- Aborted tests exit with code 2 (vs. 0 for pass, 1 for failures)
+- The abort message is displayed in the test summary
+- Useful for scenarios like: database connection failures, missing prerequisites, environment issues
+
 ## Electron and Web App Testing with Puppeteer
 
 ektest supports testing Electron applications and web applications using Puppeteer. This allows you to interact with your app's UI and test user interactions.

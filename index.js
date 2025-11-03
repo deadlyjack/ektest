@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { exec, spawn } from 'node:child_process';
-import { readdir, stat, writeFile, mkdir } from 'node:fs/promises';
+import { readdir, stat, lstat, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import Loader from './lib/loader.js';
@@ -45,13 +45,17 @@ if (detailed) {
 
   await mkdir(BUILD_DIR, { recursive: true });
 
+  const searchStartTime = performance.now();
   const testFiles = (await getTestFiles(testDir || process.cwd())).sort((a, b) => a.localeCompare(b));
+  const searchEndTime = performance.now();
 
   if (testFiles.length === 0) {
     loader.clear();
     console.error('No test files found. Please ensure you have test files in the specified directory.');
     process.exit(1);
   }
+
+  loader.update(`Found ${testFiles.length} test file(s) in ${(searchEndTime - searchStartTime).toFixed(0)}ms`);
 
   const testLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/test.js')).href;
   const expectLibPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/expect.js')).href;
@@ -61,7 +65,7 @@ if (detailed) {
   const webAppPath = pathToFileURL(resolve(process.cwd(), 'node_modules/ektest/lib/web-app.js')).href;
 
   let tests = `
-  import test from "${testLibPath}";
+  import test, { abort } from "${testLibPath}";
   import expect from "${expectLibPath}";
   import summary from "${summaryLibPath}";
   import config from '${configLibPath}';
@@ -79,6 +83,7 @@ if (detailed) {
   globalThis.queryAll = queryAll;
   globalThis.type = type;
   globalThis.clear = clear;
+  globalThis.abort = abort;
 
   config.verbose = ${verbose};
 
@@ -117,30 +122,62 @@ if (detailed) {
 `;
 
   await writeFile(resolve(LIB_DIR, 'tests.js'), tests, 'utf8');
-  await new Promise((resolve, reject) => {
-    // Use proper quoting for cross-platform compatibility
-    exec(`npx webpack --config "${webpackConfig}"`, (error, stdout, stderr) => {
-      if (error) {
-        console.error('Webpack compilation failed:');
-        if (stderr) console.error(stderr);
-        if (stdout) console.log(stdout);
-        reject(error);
-        return;
-      }
-      resolve(stdout);
-    });
-  });
-  loader.clear();
 
-  spawn('node', [resolve(BUILD_DIR, 'main.cjs')], {
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      NODE_ENV: 'test',
-    },
-  }).on('exit', (code) => {
-    process.exit(code);
-  });
+  // Check if webpack is available
+  let useWebpack = false;
+  try {
+    const { stat } = await import('node:fs/promises');
+    await stat(resolve(process.cwd(), 'node_modules', 'webpack'));
+    useWebpack = true;
+  } catch {
+    // Webpack not installed, will run tests directly
+  }
+
+  if (useWebpack) {
+    loader.update('Bundling with webpack');
+    const bundleStartTime = performance.now();
+
+    await new Promise((resolve, reject) => {
+      // Use proper quoting for cross-platform compatibility
+      exec(`npx webpack --config "${webpackConfig}"`, (error, stdout, stderr) => {
+        const bundleEndTime = performance.now();
+
+        if (error) {
+          loader.clear();
+          console.error('Webpack compilation failed:');
+          if (stderr) console.error(stderr);
+          if (stdout) console.log(stdout);
+          reject(error);
+          return;
+        }
+        loader.update(`Bundled in ${(bundleEndTime - bundleStartTime).toFixed(0)}ms`);
+        resolve(stdout);
+      });
+    });
+    loader.clear();
+
+    spawn('node', [resolve(BUILD_DIR, 'main.cjs')], {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+      },
+    }).on('exit', (code) => {
+      process.exit(code);
+    });
+  } else {
+    // Run tests directly without webpack
+    loader.clear();
+    spawn('node', [resolve(LIB_DIR, 'tests.js')], {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+      },
+    }).on('exit', (code) => {
+      process.exit(code);
+    });
+  }
 })();
 
 /**
@@ -148,22 +185,31 @@ if (detailed) {
  * @param {string} path - The directory path to search for test files.
  * @returns {Promise<string[]>} - A promise that resolves to an array of test file paths.
  */
-async function getTestFiles(path) {
-  loader.update(`Searching for test files in ${path}`);
+async function getTestFiles(path, depth = 0) {
   const files = await readdir(path);
   const allTestFiles = [];
+
   for (const file of files) {
     if (excludedDirs.includes(file) || file.startsWith('.')) {
       continue; // Skip excluded directories
     }
 
     const fullPath = resolve(path, file);
-    const fileStat = await stat(fullPath);
+
+    // Use lstat to detect symbolic links and junctions
+    const fileStat = await lstat(fullPath);
+
+    // Skip symbolic links and junctions to avoid infinite loops
+    if (fileStat.isSymbolicLink()) {
+      continue;
+    }
+
     if (fileStat.isFile() && file.endsWith('.test.js')) {
       allTestFiles.push(fullPath);
     } else if (fileStat.isDirectory()) {
-      allTestFiles.push(...await getTestFiles(fullPath));
+      allTestFiles.push(...await getTestFiles(fullPath, depth + 1));
     }
   }
+
   return allTestFiles;
 }

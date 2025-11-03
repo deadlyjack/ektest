@@ -147,7 +147,7 @@ writeFileSync(resolve(TEST_DIR, 'index.html'), `
     </div>
     
     <div>
-      <button id="submit-button" type="submit">Submit</button>
+      <button id="submit-button" class="btn btn-primary" type="submit">Submit</button>
       <button id="reset-button">Reset</button>
       <button id="context-menu-button">Right Click Me</button>
     </div>
@@ -245,41 +245,20 @@ export default {
 `);
 
 writeFileSync(resolve(testsDir, 'electron.test.js'), `
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
-import os from 'node:os';
+let page;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Determine electron executable path based on platform
-function getElectronPath() {
-  const platform = os.platform();
-  const electronModule = resolve(__dirname, '..', 'node_modules', 'electron');
-  
-  if (platform === 'win32') {
-    return resolve(electronModule, 'dist', 'electron.exe');
-  } else if (platform === 'darwin') {
-    return resolve(electronModule, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
-  } else {
-    return resolve(electronModule, 'dist', 'electron');
-  }
-}
-
-test('Electron app launches and has correct title', async () => {
-  const electronPath = getElectronPath();
-  const appPath = resolve(__dirname, '..', 'main.js');
-
-  const { page } = await setup({
-    appPath: electronPath,
+test('setup works and page is accessible', async () => {
+  const res = await setup({
     puppeteerOptions: {
-      args: [appPath],
+      args: ['./main.js'],
       headless: false,
       timeout: 30000,
     }
   });
+  page = res.page;
+});
 
+test('Electron app launches and has correct title', async () => {
   // Wait for app to load
   await page.waitForSelector('#app-title', { timeout: 10000 });
 
@@ -297,18 +276,6 @@ test('Electron app launches and has correct title', async () => {
 });
 
 test('Can interact with buttons and get text', async () => {
-  const electronPath = getElectronPath();
-  const appPath = resolve(__dirname, '..', 'main.js');
-
-  const { page } = await setup({
-    appPath: electronPath,
-    puppeteerOptions: {
-      args: [appPath],
-      headless: false,
-      timeout: 30000,
-    }
-  });
-
   // Use waitFor function to wait for element
   await waitFor('#submit-button', { timeout: 10000 });
 
@@ -330,18 +297,6 @@ test('Can interact with buttons and get text', async () => {
 });
 
 test('Can interact with input fields', async () => {
-  const electronPath = getElectronPath();
-  const appPath = resolve(__dirname, '..', 'main.js');
-
-  const { page } = await setup({
-    appPath: electronPath,
-    puppeteerOptions: {
-      args: [appPath],
-      headless: false,
-      timeout: 30000,
-    }
-  });
-
   await page.waitForSelector('#username', { timeout: 10000 });
 
   // Interact with username input using the new type method
@@ -363,18 +318,6 @@ test('Can interact with input fields', async () => {
 });
 
 test('Can trigger context menu', async () => {
-  const electronPath = getElectronPath();
-  const appPath = resolve(__dirname, '..', 'main.js');
-
-  const { page } = await setup({
-    appPath: electronPath,
-    puppeteerOptions: {
-      args: [appPath],
-      headless: false,
-      timeout: 30000,
-    }
-  });
-
   await page.waitForSelector('#context-menu-button', { timeout: 10000 });
 
     // Right-click the context menu button
@@ -391,18 +334,6 @@ test('Can trigger context menu', async () => {
 });
 
 test('Can access puppeteer instance for advanced operations', async () => {
-  const electronPath = getElectronPath();
-  const appPath = resolve(__dirname, '..', 'main.js');
-
-  const { page } = await setup({
-    appPath: electronPath,
-    puppeteerOptions: {
-      args: [appPath],
-      headless: false,
-      timeout: 30000,
-    }
-  });
-
   await page.waitForSelector('#app-title', { timeout: 10000 });
 
   // Query an element
@@ -426,18 +357,6 @@ test('Can access puppeteer instance for advanced operations', async () => {
 });
 
 test('queryAll can select multiple elements', async () => {
-  const electronPath = getElectronPath();
-  const appPath = resolve(__dirname, '..', 'main.js');
-
-  const { page } = await setup({
-    appPath: electronPath,
-    puppeteerOptions: {
-      args: [appPath],
-      headless: false,
-      timeout: 30000,
-    }
-  });
-
   await page.waitForSelector('.list-item', { timeout: 10000 });
 
   // Query all list items
@@ -461,18 +380,6 @@ test('queryAll can select multiple elements', async () => {
 });
 
 test('type() convenience method works', async () => {
-  const electronPath = getElectronPath();
-  const appPath = resolve(__dirname, '..', 'main.js');
-
-  const { page } = await setup({
-    appPath: electronPath,
-    puppeteerOptions: {
-      args: [appPath],
-      headless: false,
-      timeout: 30000,
-    }
-  });
-
   await page.waitForSelector('#username', { timeout: 10000 });
 
   // Clear existing values first
@@ -494,18 +401,6 @@ test('type() convenience method works', async () => {
 });
 
 test('click() convenience method works', async () => {
-  const electronPath = getElectronPath();
-  const appPath = resolve(__dirname, '..', 'main.js');
-
-  const { page } = await setup({
-    appPath: electronPath,
-    puppeteerOptions: {
-      args: [appPath],
-      headless: false,
-      timeout: 30000,
-    }
-  });
-
   await page.waitForSelector('#submit-button', { timeout: 10000 });
 
   // Use click() convenience method
@@ -518,6 +413,38 @@ test('click() convenience method works', async () => {
   const result = await query('#result');
   const resultText = await result.innerText;
   expect('result visible after click', resultText).toMatch(/Success/);
+});
+
+test('getAttribute, id, className, and classList work', async () => {
+  await page.waitForSelector('#username', { timeout: 10000 });
+
+  // Test id getter
+  const usernameInput = await query('#username');
+  const inputId = await usernameInput.id;
+  expect('id getter works', inputId).toBe('username');
+
+  // Test className getter
+  const submitButton = await query('#submit-button');
+  const buttonClass = await submitButton.className;
+  expect('className contains btn', buttonClass).toContain('btn');
+  expect('className contains btn-primary', buttonClass).toContain('btn-primary');
+
+  // Test classList getter (returns array)
+  const buttonClassList = await submitButton.classList;
+  expect('classList is array', buttonClassList).toBeArray();
+  expect('classList contains btn', buttonClassList).toContain('btn');
+  expect('classList contains btn-primary', buttonClassList).toContain('btn-primary');
+
+  // Test getAttribute
+  const inputType = await usernameInput.getAttribute('type');
+  expect('getAttribute returns type', inputType).toBe('text');
+  
+  const inputPlaceholder = await usernameInput.getAttribute('placeholder');
+  expect('getAttribute returns placeholder', inputPlaceholder).toBe('Enter username');
+
+  // Test getAttribute with non-existent attribute
+  const nonExistent = await usernameInput.getAttribute('non-existent');
+  expect('getAttribute returns null for non-existent', nonExistent).toBeNull();
 });
 `);
 
