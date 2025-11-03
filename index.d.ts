@@ -39,10 +39,45 @@ interface QueryElement {
   readonly puppeteer: any; // Puppeteer Page instance
 }
 
+// Puppeteer launch options for better autocomplete
+interface PuppeteerLaunchOptions {
+  /** Path to a browser executable to use instead of the bundled Chromium */
+  executablePath?: string;
+  /** Whether to run browser in headless mode (default: true) */
+  headless?: boolean | 'new';
+  /** Slows down Puppeteer operations by the specified amount of milliseconds */
+  slowMo?: number;
+  /** Additional arguments to pass to the browser instance */
+  args?: string[];
+  /** Whether to ignore HTTPS errors (default: false) */
+  ignoreHTTPSErrors?: boolean;
+  /** Sets a consistent viewport for each page. Defaults to an 800x600 viewport. null disables the default viewport */
+  defaultViewport?: { width: number; height: number } | null;
+  /** Maximum time in milliseconds to wait for the browser to start */
+  timeout?: number;
+  /** Whether to pipe the browser process stdout and stderr (default: false) */
+  dumpio?: boolean;
+  /** Path to a user data directory */
+  userDataDir?: string;
+  /** Specify environment variables that will be visible to the browser (default: process.env) */
+  env?: Record<string, string | undefined>;
+  /** Whether to auto-open a DevTools panel for each tab (default: false) */
+  devtools?: boolean;
+  /** Close the browser process on SIGINT/SIGTERM signals (default: true) */
+  handleSIGINT?: boolean;
+  handleSIGTERM?: boolean;
+  handleSIGHUP?: boolean;
+  /** Additional browser-specific options */
+  [key: string]: any;
+}
+
 interface SetupOptions {
-  appPath?: string; // Optional - for Electron apps, auto-detects if electron package is installed
-  url?: string; // Optional - URL to navigate to for web app testing
-  puppeteerOptions?: any;
+  /** Path to the Electron app executable (optional - auto-detects if electron package is installed) */
+  appPath?: string;
+  /** URL to navigate to for web app testing (if provided, launches a regular browser instead of Electron) */
+  url?: string;
+  /** Additional Puppeteer launch options */
+  puppeteerOptions?: PuppeteerLaunchOptions;
 }
 
 interface Setup {
@@ -57,7 +92,9 @@ declare const expect: (
   verbose?: boolean,
 ) => IExpectation;
 declare const query: (selector: string) => Promise<QueryElement>;
-declare const setup: (options: SetupOptions) => Promise<Setup>;
+declare const queryAll: (selector: string) => Promise<QueryElement[]>;
+declare const click: (selector: string) => Promise<void>;
+declare const setup: (options?: SetupOptions) => Promise<Setup>;
 declare const waitFor: (
   selector: string,
   options?: { timeout?: number; visible?: boolean; hidden?: boolean },
