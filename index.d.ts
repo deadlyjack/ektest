@@ -1,6 +1,7 @@
-// Puppeteer type imports for better autocomplete
+/// <reference types="puppeteer" />
+
+// Puppeteer type references for better autocomplete
 // Note: These types are available when puppeteer is installed as a dev dependency
-import type { ElementHandle, Page, Browser } from 'puppeteer';
 
 interface IExpectation {
   toBe: (expected: any) => IExpectation;
@@ -43,8 +44,8 @@ interface QueryElement {
   click(): Promise<void>;
   contextMenu(): Promise<void>;
   type(text: string, options?: { delay?: number }): Promise<void>;
-  readonly element: ElementHandle; // Puppeteer ElementHandle with full autocomplete
-  readonly puppeteer: Page; // Puppeteer Page instance with full autocomplete
+  readonly element: import('puppeteer').ElementHandle; // Puppeteer ElementHandle with full autocomplete
+  readonly puppeteer: import('puppeteer').Page; // Puppeteer Page instance with full autocomplete
 }
 
 // Puppeteer launch options for better autocomplete
@@ -89,8 +90,8 @@ interface SetupOptions {
 }
 
 interface Setup {
-  browser: Browser; // Puppeteer Browser with full autocomplete
-  page: Page; // Puppeteer Page with full autocomplete
+  browser: import('puppeteer').Browser; // Puppeteer Browser with full autocomplete
+  page: import('puppeteer').Page; // Puppeteer Page with full autocomplete
 }
 
 declare const test: TestFunction;
@@ -112,6 +113,9 @@ declare const setup: (options?: SetupOptions) => Promise<Setup>;
 declare const waitFor: (
   selector: string,
   options?: { timeout?: number; visible?: boolean; hidden?: boolean },
-) => Promise<ElementHandle>; // Returns Puppeteer ElementHandle with full autocomplete
-declare const keyPress: (keys: string, page?: Page) => Promise<void>;
+) => Promise<import('puppeteer').ElementHandle>; // Returns Puppeteer ElementHandle with full autocomplete
+declare const keyPress: (
+  keys: string,
+  page?: import('puppeteer').Page,
+) => Promise<void>;
 declare const abort: (message?: string) => void;
