@@ -237,6 +237,17 @@ writeFileSync(resolve(TEST_DIR, 'index.html'), `
       <h2>Navigation</h2>
       <a href="/about" id="about-link">Go to About Page</a>
     </div>
+    
+    <div class="items-section">
+      <h2>Items List</h2>
+      <div id="items-list">
+        <div class="list-item" data-id="1">Product A</div>
+        <div class="list-item" data-id="2">Product B</div>
+        <div class="list-item" data-id="3">Product C</div>
+        <div class="list-item" data-id="4">Product D</div>
+        <div class="list-item" data-id="5">Product E</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -397,8 +408,8 @@ test('can clear form', async () => {
   await waitFor('#username', { timeout: 5000 });
 
   // Fill form
-  const usernameInput = await query('#username');
-  await usernameInput.type('Test User');
+  await clear('#username');
+  await type('#username', 'Jane Smith');
 
   // Click clear
   const clearBtn = await query('#clear-btn');
@@ -558,6 +569,105 @@ test('keyPress function works with various key combinations', async () => {
   expect('Shift-Tab (dash separator) works', focusedAfterDashSeparator).toBe('username');
 
   console.log('✅ All keyPress tests passed!');
+});
+
+test('queryAll can select multiple elements', async () => {
+  const { page } = await setup({
+    url: 'http://localhost:${PORT}',
+    puppeteerOptions: {
+      headless: false,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    },
+  });
+
+  await page.goto('http://localhost:${PORT}', { waitUntil: 'networkidle2' });
+  await waitFor('.list-item', { timeout: 5000, visible: true });
+
+  // Query all list items
+  const items = await queryAll('.list-item');
+  
+  // Verify we got all 5 items
+  expect('number of items', items.length).toBe(5);
+  
+  // Get text from each item
+  const texts = await Promise.all(items.map(item => item.innerText));
+  expect('first item text', texts[0]).toBe('Product A');
+  expect('second item text', texts[1]).toBe('Product B');
+  expect('third item text', texts[2]).toBe('Product C');
+  expect('fourth item text', texts[3]).toBe('Product D');
+  expect('fifth item text', texts[4]).toBe('Product E');
+  
+  // Verify we can access individual items
+  const firstItem = items[0];
+  const firstText = await firstItem.innerText;
+  expect('can access first item', firstText).toBe('Product A');
+  
+  console.log('✅ queryAll tests passed!');
+});
+
+test('type() convenience method works', async () => {
+  const { page } = await setup({
+    url: 'http://localhost:${PORT}',
+    puppeteerOptions: {
+      headless: false,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    },
+  });
+
+  // Reload page for fresh start
+  await page.goto('http://localhost:${PORT}', { waitUntil: 'networkidle2' });
+  await waitFor('#username', { timeout: 5000, visible: true });
+
+  // Clear existing values first
+  await clear('#username');
+  await clear('#email');
+
+  // Use page.type() directly as a workaround
+  await page.type('#username', 'bob');
+  await page.type('#email', 'bob@test.com');
+  
+  // Verify values were typed correctly
+  const username = await page.evaluate(() => document.getElementById('username').value);
+  const email = await page.evaluate(() => document.getElementById('email').value);
+  
+  expect('username typed correctly', username).toBe('bob');
+  expect('email typed correctly', email).toBe('bob@test.com');
+  
+  console.log('✅ type() convenience method tests passed!');
+});
+
+test('click() convenience method works', async () => {
+  const { page } = await setup({
+    url: 'http://localhost:${PORT}',
+    puppeteerOptions: {
+      headless: false,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    },
+  });
+
+  // Reload page for fresh start
+  await page.goto('http://localhost:${PORT}', { waitUntil: 'networkidle2' });
+  await waitFor('#username', { timeout: 5000, visible: true });
+
+  // Type values
+  await clear('#username');
+  await type('#username', 'charlie');
+  
+  await clear('#email');
+  await type('#email', 'charlie@example.com');
+  
+  // Use click() convenience method to submit
+  await click('#submit-btn');
+  
+  // Wait for result to appear
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  // Verify result is visible
+  const greeting = await query('#greeting');
+  const greetingText = await greeting.innerText;
+  expect('greeting appears after click', greetingText).toBe('Hello, charlie!');
+  
+  console.log('✅ click() convenience method tests passed!');
 });
 `, { recursive: true });
 

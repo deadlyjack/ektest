@@ -94,6 +94,12 @@ declare const expect: (
 declare const query: (selector: string) => Promise<QueryElement>;
 declare const queryAll: (selector: string) => Promise<QueryElement[]>;
 declare const click: (selector: string) => Promise<void>;
+declare const type: (
+  selector: string,
+  text: string,
+  options?: { delay?: number },
+) => Promise<void>;
+declare const clear: (selector: string) => Promise<void>;
 declare const setup: (options?: SetupOptions) => Promise<Setup>;
 declare const waitFor: (
   selector: string,

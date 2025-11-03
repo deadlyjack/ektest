@@ -159,6 +159,13 @@ writeFileSync(resolve(TEST_DIR, 'index.html'), `
     <div id="message" class="info">
       Welcome to the test app!
     </div>
+    
+    <div id="items-list">
+      <div class="list-item" data-id="1">Item 1</div>
+      <div class="list-item" data-id="2">Item 2</div>
+      <div class="list-item" data-id="3">Item 3</div>
+      <div class="list-item" data-id="4">Item 4</div>
+    </div>
   </div>
 
   <script>
@@ -416,6 +423,101 @@ test('Can access puppeteer instance for advanced operations', async () => {
     
     // Verify puppeteer page is the same as the one from setup
     expect('puppeteer instance', puppeteerPage === page).toBeTruthy();
+});
+
+test('queryAll can select multiple elements', async () => {
+  const electronPath = getElectronPath();
+  const appPath = resolve(__dirname, '..', 'main.js');
+
+  const { page } = await setup({
+    appPath: electronPath,
+    puppeteerOptions: {
+      args: [appPath],
+      headless: false,
+      timeout: 30000,
+    }
+  });
+
+  await page.waitForSelector('.list-item', { timeout: 10000 });
+
+  // Query all list items
+  const items = await queryAll('.list-item');
+  
+  // Verify we got all 4 items
+  expect('number of items', items.length).toBe(4);
+  
+  // Get text from each item
+  const texts = await Promise.all(items.map(item => item.innerText));
+  expect('first item text', texts[0]).toBe('Item 1');
+  expect('second item text', texts[1]).toBe('Item 2');
+  expect('third item text', texts[2]).toBe('Item 3');
+  expect('fourth item text', texts[3]).toBe('Item 4');
+  
+  // Verify all items are accessible
+  for (let i = 0; i < items.length; i++) {
+    const text = await items[i].innerText;
+    expect(\`item \${i + 1} text\`, text).toMatch(/Item \\d/);
+  }
+});
+
+test('type() convenience method works', async () => {
+  const electronPath = getElectronPath();
+  const appPath = resolve(__dirname, '..', 'main.js');
+
+  const { page } = await setup({
+    appPath: electronPath,
+    puppeteerOptions: {
+      args: [appPath],
+      headless: false,
+      timeout: 30000,
+    }
+  });
+
+  await page.waitForSelector('#username', { timeout: 10000 });
+
+  // Clear existing values first
+  await page.evaluate(() => {
+    document.getElementById('username').value = '';
+    document.getElementById('email').value = '';
+  });
+
+  // Use type() convenience method instead of query + type
+  await type('#username', 'alice');
+  await type('#email', 'alice@example.com', { delay: 50 });
+  
+  // Verify values were typed correctly
+  const username = await page.evaluate(() => document.getElementById('username').value);
+  const email = await page.evaluate(() => document.getElementById('email').value);
+  
+  expect('username typed correctly', username).toBe('alice');
+  expect('email typed correctly', email).toBe('alice@example.com');
+});
+
+test('click() convenience method works', async () => {
+  const electronPath = getElectronPath();
+  const appPath = resolve(__dirname, '..', 'main.js');
+
+  const { page } = await setup({
+    appPath: electronPath,
+    puppeteerOptions: {
+      args: [appPath],
+      headless: false,
+      timeout: 30000,
+    }
+  });
+
+  await page.waitForSelector('#submit-button', { timeout: 10000 });
+
+  // Use click() convenience method
+  await click('#submit-button');
+  
+  // Wait for result to appear
+  await waitFor('#result[style*="display: block"]', { timeout: 5000 });
+  
+  // Verify result is visible
+  const result = await query('#result');
+  const resultText = await result.innerText;
+  expect('result visible after click', resultText).toMatch(/Success/);
 });
 `);
 
