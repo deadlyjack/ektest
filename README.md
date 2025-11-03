@@ -61,7 +61,8 @@ ektest provides a comprehensive set of matchers for your assertions:
 
 ```javascript
 // Equality
-expect('value', value).toBe(4);
+expect('value', value).toBe(4); // Strict equality (===)
+expect('object', obj).toEqual(expected); // Deep equality for objects/arrays
 expect('value', value).not.toBe(5);
 
 // Truthiness
@@ -78,10 +79,12 @@ expect('value', value).toBeNumber();
 // Strings
 expect('string', string).toMatch(/pattern/);
 expect('string', string).toBeString();
+expect('string', string).toContain('substring');
 
 // Arrays and Objects
 expect('array', array).toHave(item);
 expect('array', array).toHave([item1, item2]); // Multiple items
+expect('array', array).toContain(item); // Check if array contains item
 expect('array', array).toBeArray();
 expect('object', object).toHave('property');
 expect('object', object).toBeObject();
@@ -94,6 +97,43 @@ expect('value', value).toBeBoolean();
 // Inclusion
 expect('value', value).toBeIn([1, 2, 3, 4]);
 ```
+
+## Improved Error Messages
+
+ektest provides clear, descriptive error messages with file locations and code snippets to help you quickly identify and fix issues:
+
+```javascript
+test('user age validation', () => {
+  const user = { name: 'John', age: 30 };
+  expect('User age', user.age).toBe(25);
+});
+```
+
+**Error output:**
+
+```
+✗ user age validation
+  ✗ Comparison failed: expected values to be strictly equal (===)
+
+    Expected: 25
+    Received: 30
+
+  at tests/user.test.js:3:30
+
+  Code:
+     1 | test('user age validation', () => {
+     2 |   const user = { name: "John", age: 30 };
+     3 |   expect("User age", user.age).toBe(25);
+                                         ^
+     4 | });
+```
+
+The error messages show:
+
+- 📝 Clear description of what failed
+- 📊 Both expected and actual values
+- 📍 Exact file location (file:line:column)
+- 🔍 Code snippet with the failing line highlighted
 
 ## CLI Options
 
@@ -216,7 +256,7 @@ test('async array processing', async () => {
 });
 ```
 
-## Electron Testing with Puppeteer
+## Electron and Web App Testing with Puppeteer
 
 ektest supports testing Electron applications and web applications using Puppeteer. This allows you to interact with your app's UI and test user interactions.
 
@@ -230,16 +270,16 @@ npm install --save-dev puppeteer
 
 ### Setup
 
-Use the `setupElectron()` function to launch your Electron app or web app and get a Puppeteer page instance. **Cleanup is handled automatically** after all tests complete - you don't need to call cleanup manually!
+Use the `setup()` function (or the legacy `setupElectron()` alias) to launch your Electron app or web app and get a Puppeteer page instance. **Cleanup is handled automatically** after all tests complete - you don't need to call cleanup manually!
 
 #### Testing Electron Apps
 
-**Auto-detection:** If you have the `electron` package installed, `setupElectron()` will automatically detect and use it. You only need to specify `appPath` if you're testing a different Electron executable.
+**Auto-detection:** If you have the `electron` package installed, `setup()` will automatically detect and use it. You only need to specify `appPath` if you're testing a different Electron executable.
 
 ```javascript
 test('Electron app launches', async () => {
   // Option 1: Auto-detect Electron (if electron package is installed)
-  const { page } = await setupElectron({
+  const { page } = await setup({
     puppeteerOptions: {
       headless: false,
       args: ['path/to/your/main.js'], // Your app's main file
@@ -247,7 +287,7 @@ test('Electron app launches', async () => {
   });
 
   // Option 2: Specify custom Electron executable
-  const { page } = await setupElectron({
+  const { page } = await setup({
     appPath: 'path/to/electron.exe', // Custom Electron path
     puppeteerOptions: {
       headless: false,
@@ -261,11 +301,11 @@ test('Electron app launches', async () => {
 
 #### Testing Web Apps
 
-You can also test web applications by providing a `url` option. This launches a regular browser and navigates to the specified URL:
+You can also test web applications by providing a `url` option. This launches a regular browser and navigates to the specified URL. The browser will use full viewport size for realistic testing:
 
 ```javascript
 test('web app login works', async () => {
-  const { page } = await setupElectron({
+  const { page } = await setup({
     url: 'http://localhost:3000', // Your web app URL
     puppeteerOptions: {
       headless: false, // Set to true for headless mode
@@ -299,10 +339,12 @@ The `query(selector)` function allows you to find and interact with DOM elements
 
 The `waitFor(selector, options?)` function waits for an element to appear in the page before continuing.
 
+The `keyPress(keys, page?)` function sends keyboard shortcuts and key combinations to the page.
+
 ```javascript
 test('can interact with UI elements', async () => {
-  await setupElectron({
-    appPath: 'path/to/your/electron/app',
+  const { page } = await setup({
+    url: 'http://localhost:3000',
   });
 
   // Wait for an element to appear
@@ -327,6 +369,13 @@ test('can interact with UI elements', async () => {
   const email = await query('#email');
   await email.type('user@example.com', { delay: 50 }); // 50ms between each key
 
+  // Send keyboard shortcuts
+  await keyPress('Enter'); // Press Enter key
+  await keyPress('Ctrl+A'); // Select all (Ctrl+A)
+  await keyPress('Shift+Enter'); // Shift+Enter combination
+  await keyPress('Ctrl+Shift+K'); // Multiple modifiers
+  await keyPress('Meta+V'); // Cmd+V on Mac, Win+V on Windows
+
   // Click the button
   await button.click();
 
@@ -337,6 +386,41 @@ test('can interact with UI elements', async () => {
   await button.contextMenu();
 });
 ```
+
+### keyPress Function
+
+The `keyPress(keys, page?)` function sends keyboard shortcuts with modifiers to the page. It supports various key combinations:
+
+```javascript
+// Simple keys
+await keyPress('Enter');
+await keyPress('Escape');
+await keyPress('Tab');
+await keyPress('ArrowDown');
+
+// With modifiers (supports both + and - as separators)
+await keyPress('Ctrl+A'); // Ctrl+A
+await keyPress('Shift+Enter'); // Shift+Enter
+await keyPress('Ctrl-Shift-K'); // Ctrl+Shift+K (dash separator)
+await keyPress('Meta+C'); // Cmd+C on Mac, Win+C on Windows
+
+// Multiple modifiers
+await keyPress('Ctrl+Shift+A');
+await keyPress('Alt+Shift+F');
+
+// Using specific page (optional second parameter)
+const { page } = await setup({ url: 'http://localhost:3000' });
+await keyPress('Enter', page); // Explicitly pass page
+```
+
+**Supported modifiers:**
+
+- `Ctrl` or `Control` - Control key
+- `Shift` - Shift key
+- `Alt` - Alt key
+- `Meta`, `Cmd`, or `Command` - Meta/Command key (⌘ on Mac, ⊞ on Windows)
+
+**Note:** The function uses the global page by default (from `setup()`), but you can pass a specific page instance as the second parameter if needed.
 
 ### waitFor Function
 
@@ -381,7 +465,7 @@ The object returned by `query()` provides the following methods and properties:
 ```javascript
 // electron-app.test.js
 test('Electron app full workflow', async () => {
-  const { page } = await setupElectron({
+  const { page } = await setup({
     appPath: './dist/electron/MyApp.exe',
     puppeteerOptions: {
       headless: false,
@@ -402,12 +486,17 @@ test('Electron app full workflow', async () => {
   await emailInput.click();
   await emailInput.type('test@example.com', { delay: 30 }); // Types with 30ms delay
 
+  // Use keyboard shortcuts
+  await keyPress('Tab'); // Move to next field
+  await keyPress('Ctrl+A'); // Select all text
+  await keyPress('Shift+Enter'); // Submit with Shift+Enter
+
   // Submit the form
   const submitButton = await query('button[type="submit"]');
   await submitButton.click();
 
   // Wait for result
-  await page.waitForSelector('#success-message');
+  await waitFor('#success-message');
 
   // Verify success message
   const successMsg = await query('#success-message');
@@ -422,7 +511,7 @@ For complex testing scenarios, you can access the Puppeteer page instance direct
 
 ```javascript
 test('Advanced Puppeteer operations', async () => {
-  const { page } = await setupElectron({
+  const { page } = await setup({
     appPath: './dist/electron/MyApp.exe',
   });
 
@@ -477,7 +566,12 @@ your-project/
 
 ## Roadmap
 
-- 🎯 **More Matchers** - Add toEqual, toThrow, toContain, and promise matchers
+- ✅ **toEqual Matcher** - Deep equality comparison for objects and arrays
+- ✅ **toContain Matcher** - Check if arrays/strings contain elements
+- ✅ **Improved Error Messages** - Clear error messages with file locations and code snippets
+- ✅ **Keyboard Shortcuts** - keyPress function for testing keyboard interactions
+- ✅ **Full Viewport Support** - Web apps use full browser window size
+- 🎯 **More Matchers** - Add toThrow and promise matchers
 - 🌐 **Browser Testing** - Run tests in real browsers
 - 📊 **Code Coverage** - Built-in coverage reporting
 - 🔄 **More Bundlers** - Support for Vite, Rollup, esbuild
