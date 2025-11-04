@@ -29,7 +29,7 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "npm pack && node test.js",
+    "test": "npm pack && node test-basic.js && node test-webpack.js && node test-electron.js && node test-webapp.js",
     "test:electron": "npm pack && node test-electron.js",
     "test:webapp": "npm pack && node test-webapp.js"
   },

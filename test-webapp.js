@@ -524,8 +524,6 @@ test('keyPress function works with various key combinations', async () => {
   await new Promise(resolve => setTimeout(resolve, 100));
   let focusedAfterDashSeparator = await page.evaluate(() => document.activeElement?.id);
   expect('Shift-Tab (dash separator) works', focusedAfterDashSeparator).toBe('username');
-
-  console.log('✅ All keyPress tests passed!');
 });
 
 test('queryAll can select multiple elements', async () => {
@@ -550,8 +548,6 @@ test('queryAll can select multiple elements', async () => {
   const firstItem = items[0];
   const firstText = await firstItem.innerText;
   expect('can access first item', firstText).toBe('Product A');
-  
-  console.log('✅ queryAll tests passed!');
 });
 
 test('type() convenience method works', async () => {
@@ -573,8 +569,6 @@ test('type() convenience method works', async () => {
   
   expect('username typed correctly', username).toBe('bob');
   expect('email typed correctly', email).toBe('bob@test.com');
-  
-  console.log('✅ type() convenience method tests passed!');
 });
 
 test('click() convenience method works', async () => {
@@ -599,8 +593,6 @@ test('click() convenience method works', async () => {
   const greeting = await query('#greeting');
   const greetingText = await greeting.innerText;
   expect('greeting appears after click', greetingText).toBe('Hello, charlie!');
-  
-  console.log('✅ click() convenience method tests passed!');
 });
 
 test('getAttribute, id, className, and classList work', async () => {
@@ -633,18 +625,8 @@ test('getAttribute, id, className, and classList work', async () => {
   // Test getAttribute with non-existent attribute
   const nonExistent = await usernameInput.getAttribute('data-nonexistent');
   expect('getAttribute returns null for non-existent', nonExistent).toBeNull();
-
-  console.log('✅ getAttribute, id, className, and classList tests passed!');
 });
 `, { recursive: true });
-
-// Create webpack config
-console.log('⚙️  Creating webpack.config.js...');
-writeFileSync(resolve(TEST_DIR, 'webpack.config.js'), `
-export default {
-  mode: 'production',
-};
-`);
 
 // Create ektest config
 console.log('⚙️  Creating ektest.config.json...');
@@ -658,9 +640,6 @@ try {
   // Install dependencies
   console.log('\n📥 Installing Puppeteer...');
   execSync('npm install puppeteer --save-dev', { cwd: TEST_DIR, stdio: 'inherit' });
-
-  console.log('\n📥 Installing webpack...');
-  execSync('npm install webpack webpack-cli --save-dev', { cwd: TEST_DIR, stdio: 'inherit' });
 
   console.log('\n📥 Installing ektest...');
   const tgzFile = resolve(process.cwd(), `ektest-${packageJson.version}.tgz`);

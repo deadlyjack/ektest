@@ -220,30 +220,6 @@ writeFileSync(resolve(testsDir, 'package.json'), `
 }
 `);
 
-// Create webpack config for tests
-writeFileSync(resolve(testsDir, 'webpack.config.js'), `
-export default {
-  target: 'node',
-  mode: 'development',
-  entry: './index.js',
-  output: {
-    filename: 'bundle.js',
-  },
-  module: {
-    rules: [
-      {
-        test: /\.js?$/,
-        type: 'javascript/auto',
-        exclude: /(node_modules)/,
-        resolve: {
-          fullySpecified: false,
-        },
-      },
-    ]
-  },
-};
-`);
-
 writeFileSync(resolve(testsDir, 'electron.test.js'), `
 let page;
 
@@ -448,31 +424,6 @@ test('getAttribute, id, className, and classList work', async () => {
 });
 `);
 
-// Create webpack config
-console.log('⚙️  Creating webpack.config.js...');
-writeFileSync(resolve(TEST_DIR, 'webpack.config.js'), `
-export default {
-  target: 'node',
-  mode: 'development',
-  entry: './index.js',
-  output: {
-    filename: 'bundle.js',
-  },
-  module: {
-    rules: [
-      {
-        test: /\.js?$/,
-        type: 'javascript/auto',
-        exclude: /(node_modules)/,
-        resolve: {
-          fullySpecified: false,
-        },
-      },
-    ]
-  },
-};
-`);
-
 // Create ektest config to point to tests directory
 console.log('⚙️  Creating ektest.config.json...');
 writeFileSync(resolve(TEST_DIR, 'ektest.config.json'), `
@@ -488,9 +439,6 @@ try {
 
   console.log('\n📥 Installing Puppeteer...');
   execSync('npm install puppeteer --save-dev', { cwd: TEST_DIR, stdio: 'inherit' });
-
-  console.log('\n📥 Installing webpack...');
-  execSync('npm install webpack webpack-cli --save-dev', { cwd: TEST_DIR, stdio: 'inherit' });
 
   console.log('\n📥 Installing ektest...');
   const tgzFile = resolve(process.cwd(), `ektest-${packageJson.version}.tgz`);
