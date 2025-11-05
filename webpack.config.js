@@ -71,18 +71,9 @@ export default async (...args) => {
     },
   });
 
-  // Load webpack dynamically to use EnvironmentPlugin
-  const { default: webpack } = await import('webpack');
-
-  // Filter out EnvironmentPlugin from user plugins to avoid errors, then add our own with defaults
-  const filteredPlugins = (userConfig.plugins || []).filter(
-    plugin => !(plugin && plugin.constructor && plugin.constructor.name === 'EnvironmentPlugin')
-  );
-
   return {
     ...userConfig,
-    target: 'node',
-    mode: userConfig.mode || 'production',
+    mode: userConfig.mode || 'development',
     entry: {
       main: resolve(LIB_DIR, 'tests.js'),
     },
@@ -93,29 +84,10 @@ export default async (...args) => {
       publicPath: '/',
       clean: true,
     },
-    externals: {
-      // Mark optional puppeteer dependencies as external
-      'typescript': 'commonjs typescript',
-      'bufferutil': 'commonjs bufferutil',
-      'utf-8-validate': 'commonjs utf-8-validate',
-    },
-    module: {
-      ...userModule,
-      rules: filteredRules,
-    },
     // Enable top-level await and other modern features
     experiments: {
       ...userConfig.experiments,
       topLevelAwait: true,
     },
-    // Add EnvironmentPlugin with defaults to prevent undefined errors
-    plugins: [
-      ...filteredPlugins,
-      new webpack.EnvironmentPlugin({
-        HOST: 'localhost',
-        PORT: '8080',
-        NODE_ENV: 'test',
-      }),
-    ],
   };
 };

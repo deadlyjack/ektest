@@ -97,10 +97,9 @@ if (detailed) {
     const cwd = process.cwd().replace(/\\/g, '/');
     const normalizedFile = file.replace(/\\/g, '/');
     const relativePath = normalizedFile.replace(`${cwd}/`, '');
-    const fileURL = pathToFileURL(file).href;
     tests += `
     config.file = '${relativePath}';
-    await import('${fileURL}');
+    await import('${normalizedFile}');
 `;
   }
 
